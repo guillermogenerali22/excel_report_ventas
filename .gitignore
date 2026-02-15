@@ -13,3 +13,5 @@ venv/
 # Generated files
 outputs/
 data/input.xlsx
+
+.idea/
