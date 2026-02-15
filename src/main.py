@@ -1,5 +1,6 @@
 import pandas as pd
 from pathlib import Path
+from charts import generate_charts
 
 from config import INPUT_FILE, OUTPUT_CSV, OUTPUT_PDF, SHEET_NAME
 from cleaning import clean_sales
@@ -29,6 +30,9 @@ def main():
 
     df_clean.to_csv(out_csv, index=False, encoding="utf-8-sig")
     build_pdf_report(df_clean, stats, str(out_pdf))
+
+    charts = generate_charts(df_clean, "outputs/charts")
+    print("Gráficos generados:", charts)
 
     print("OK ✅ Generado:", out_csv, "y", out_pdf)
 

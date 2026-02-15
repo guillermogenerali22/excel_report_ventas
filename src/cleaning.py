@@ -1,4 +1,6 @@
 import pandas as pd
+import re
+
 
 def _normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
@@ -10,13 +12,33 @@ def _normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     )
     return df
 
-def _to_float_series(s: pd.Series) -> pd.Series:
-    # soporta "12,50" o "12.50" o " 12,50 € "
-    s = s.astype(str).str.replace("€", "", regex=False).str.strip()
-    s = s.str.replace(".", "", regex=False)  # por si usan 1.234,56
-    s = s.str.replace(",", ".", regex=False)
-    return pd.to_numeric(s, errors="coerce")
 
+def _to_float_series(s: pd.Series) -> pd.Series:
+    def parse_one(x):
+        if pd.isna(x):
+            return None
+        t = str(x).strip()
+        t = t.replace("€", "").replace(" ", "")
+
+        # Si tiene coma, asumimos formato español: 1.234,56 -> 1234.56
+        if "," in t:
+            t = t.replace(".", "")
+            t = t.replace(",", ".")
+        else:
+            # Si solo hay puntos, asumimos decimal inglés: 60.00 -> 60.00
+            # pero si hay más de un punto, los anteriores suelen ser miles: 1.234.567 -> 1234567
+            if t.count(".") > 1:
+                parts = t.split(".")
+                t = "".join(parts[:-1]) + "." + parts[-1]
+
+        # Dejar solo números, signo y punto
+        t = re.sub(r"[^0-9\.\-]", "", t)
+        try:
+            return float(t)
+        except:
+            return None
+
+    return s.apply(parse_one)
 def clean_sales(df_raw: pd.DataFrame):
     df = _normalize_columns(df_raw)
 
